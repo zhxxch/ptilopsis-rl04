@@ -1,10 +1,7 @@
 const playername = "ptilopsis";
-const id1 = "char_171_bldsk_witch#1";
 const id2 = "build_char_128_plosis"
 var lastFrameTime = Date.now() / 1000;
 var canvas = document.querySelector("canvas");
-canvas.width = 300;
-canvas.height = 300;
 var config = { alpha: true };
 var gl = canvas.getContext("webgl", config) || canvas.getContext("experimental-webgl", config);
 if (!gl) {
@@ -37,7 +34,7 @@ async function loadskel(skeljson) {
 	renderer.resize(spine.webgl.ResizeMode.Fit);
 	var animationStateData = new spine.AnimationStateData(skeleton.data);
 	var animationState = new spine.AnimationState(animationStateData);
-	animationState.setAnimation(0, "Move", true);
+	animationState.setAnimation(0, "Relax", true);
 	state = animationState;
 	requestAnimationFrame(render);
 }
@@ -47,7 +44,7 @@ function render() {
 	delta = 0.016;
 	lastFrameTime = now;
 
-	gl.clearColor(1, 1, 1, 1);
+	gl.clearColor(1, 1, 1, 0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	// Apply the animation state based on the delta time.
@@ -60,7 +57,12 @@ function render() {
 	renderer.end();
 	requestAnimationFrame(render);
 }
-document.querySelector("#flipp").addEventListener("click",flip);
+document.querySelector("canvas").addEventListener("click",interact);
+
+function interact(){
+	state.setAnimation(0,"Interact",false,0);
+	state.addAnimation(0,"Relax",true,0);
+}
 function flip(){
 	skeleton.flipX = !skeleton.flipX;
 }
@@ -72,25 +74,4 @@ function calculateBounds(skeleton) {
 	var size = new spine.Vector2();
 	skeleton.getBounds(offset, size, []);
 	return { offset: offset, size: size };
-}
-function resize() {
-	var w = canvas.clientWidth;
-	var h = canvas.clientHeight;
-	if (canvas.width != w || canvas.height != h) {
-		canvas.width = w;
-		canvas.height = h;
-	}
-
-	// magic
-	var centerX = bounds.offset.x + bounds.size.x / 2;
-	var centerY = bounds.offset.y + bounds.size.y / 2;
-	var scaleX = bounds.size.x / canvas.width;
-	var scaleY = bounds.size.y / canvas.height;
-	var scale = Math.max(scaleX, scaleY) * 1.2;
-	if (scale < 1) scale = 1;
-	var width = canvas.width * scale;
-	var height = canvas.height * scale;
-
-	mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
-	gl.viewport(0, 0, canvas.width, canvas.height);
 }
