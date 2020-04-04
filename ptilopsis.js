@@ -10,10 +10,7 @@ var gl = canvas.getContext("webgl", config) || canvas.getContext("experimental-w
 if (!gl) {
 	alert('WebGL is unavailable.');
 }
-var shader = spine.webgl.Shader.newTwoColoredTextured(gl);
-var batcher = new spine.webgl.PolygonBatcher(gl);
-var mvp = new spine.webgl.Matrix4();
-mvp.ortho2d(0, 0, canvas.width - 1, canvas.height - 1);
+renderer = new spine.webgl.SceneRenderer(canvas, gl);
 var skeletonRenderer = new spine.webgl.SkeletonRenderer(gl);
 var shapes = new spine.webgl.ShapeRenderer(gl);
 var state, skeleton, bounds;
@@ -26,19 +23,21 @@ async function loadskel(skeljson) {
 	while (!assetManager.isLoadingComplete()) {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
-	document.querySelector("textarea").value = JSON.stringify(skeljson);
 	var atlas = new spine.TextureAtlas(assetManager.get(id2 + ".atlas"), path => this.assetManager.get(path));
 	atlasLoader = new spine.AtlasAttachmentLoader(atlas);
 	var skeletonJson = new spine.SkeletonJson(atlasLoader);
 	var skeletonData = skeletonJson.readSkeletonData(skeljson);
 	skeleton = new spine.Skeleton(skeletonData);
-	console.log(skeleton.data.version);
 	skeleton.setSkinByName('default');
 	bounds = calculateBounds(skeleton);
-	console.log(bounds);
+	renderer.camera.position.x = bounds.offset.x+bounds.size.x/2;
+	renderer.camera.position.y = bounds.offset.y+bounds.size.y/2;
+	renderer.camera.viewportWidth = bounds.size.x * 1.2;
+	renderer.camera.viewportHeight = bounds.size.y * 1.2;
+	renderer.resize(spine.webgl.ResizeMode.Fit);
 	var animationStateData = new spine.AnimationStateData(skeleton.data);
 	var animationState = new spine.AnimationState(animationStateData);
-	animationState.setAnimation(0, "Interact", true);
+	animationState.setAnimation(0, "Move", true);
 	state = animationState;
 	requestAnimationFrame(render);
 }
@@ -48,31 +47,22 @@ function render() {
 	delta = 0.016;
 	lastFrameTime = now;
 
-	// Update the MVP matrix to adjust for canvas size changes
-	resize();
-
-	gl.clearColor(0.3, 0.3, 0.3, 1);
+	gl.clearColor(1, 1, 1, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
 	// Apply the animation state based on the delta time.
-	var premultipliedAlpha = skeleton.premultipliedAlpha;
 	state.update(delta);
 	state.apply(skeleton);
 	skeleton.updateWorldTransform();
 
-	// Bind the shader and set the texture and model-view-projection matrix.
-	shader.bind();
-	shader.setUniformi(spine.webgl.Shader.SAMPLER, 0);
-	shader.setUniform4x4f(spine.webgl.Shader.MVP_MATRIX, mvp.values);
-
-	// Start the batch and tell the SkeletonRenderer to render the active skeleton.
-	batcher.begin(shader);
-
-	skeletonRenderer.premultipliedAlpha = premultipliedAlpha;
-	skeletonRenderer.draw(batcher, skeleton);
-	batcher.end();
-	shader.unbind();
+	renderer.begin();
+	renderer.drawSkeleton(skeleton, true);
+	renderer.end();
 	requestAnimationFrame(render);
+}
+document.querySelector("#flipp").addEventListener("click",flip);
+function flip(){
+	skeleton.flipX = !skeleton.flipX;
 }
 
 function calculateBounds(skeleton) {
