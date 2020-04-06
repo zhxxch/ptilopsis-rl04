@@ -2,8 +2,6 @@ const playername = "ptilopsis";
 const id2 = "build_char_128_plosis"
 var lastFrameTime = Date.now() / 1000;
 var canvas = document.querySelector("canvas");
-canvas.width=Math.min(300,window.innerWidth);
-canvas.height=Math.min(300,window.innerHeight);
 var config = { alpha: true };
 var gl = canvas.getContext("webgl", config) || canvas.getContext("experimental-webgl", config);
 if (!gl) {
