@@ -2,6 +2,8 @@ const playername = "ptilopsis";
 const id2 = "build_char_128_plosis"
 var lastFrameTime = Date.now() / 1000;
 var canvas = document.querySelector("canvas");
+canvas.width=Math.min(200,window.innerWidth);
+canvas.height=Math.min(200,window.innerHeight);
 var config = { alpha: true };
 var gl = canvas.getContext("webgl", config) || canvas.getContext("experimental-webgl", config);
 if (!gl) {
@@ -36,6 +38,7 @@ async function loadskel(skeljson) {
 	var animationState = new spine.AnimationState(animationStateData);
 	animationState.setAnimation(0, "Relax", true);
 	state = animationState;
+	if(Math.random()<0.5){skeleton.flipX = !skeleton.flipX;}
 	requestAnimationFrame(render);
 }
 function render() {
@@ -58,10 +61,18 @@ function render() {
 	requestAnimationFrame(render);
 }
 document.querySelector("canvas").addEventListener("click",interact);
-
+var voice = document.querySelector("audio");
+var lastInteractTime = 0;
 function interact(){
+	var now = Date.now()/1000;
+	const delta = now-lastInteractTime;
+	voice.currentTime=0;
+	voice.play();
+	if(delta>1){
+		lastInteractTime=now;
 	state.setAnimation(0,"Interact",false,0);
 	state.addAnimation(0,"Relax",true,0);
+	}
 }
 function flip(){
 	skeleton.flipX = !skeleton.flipX;
