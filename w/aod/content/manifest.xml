@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Aod frameRate="60" screenWidth="1080" version="1">
+
+	<ExternalCommands>
+		<Trigger action="init">
+			<ExternCommand command="animationState" strPara="'init'" />
+		</Trigger>
+		<Trigger action="play">
+			<AnimationCommand target="imgAni" command="play"/>
+			<AnimationCommand target="timeAni" command="play"/>
+			<AnimationCommand target="endAni" command="play"/>
+		</Trigger>
+	</ExternalCommands>
+
+	<VariableBinders>
+		<!-- 查询通知 -->
+		<ContentProviderBinder name="data" uri="content://aod.notification/notifications" columns="icon" countName="hasnotifications">
+			<Variable name="notice_icon0" type="blob.bitmap" column="icon" row="0"/>
+			<Variable name="notice_icon1" type="blob.bitmap" column="icon" row="1"/>
+			<Variable name="notice_icon2" type="blob.bitmap" column="icon" row="2"/>
+			<Variable name="notice_icon3" type="blob.bitmap" column="icon" row="3"/>
+			<Trigger >
+				<VariableCommand name="noticeNum" expression="min(#hasnotifications,4)" type="number"/>
+			</Trigger>
+		</ContentProviderBinder>
+	</VariableBinders>
+
+	<Var name="imgAni">
+		<VariableAnimation loop="false" initPause="true">
+			<AniFrame value="0" time="0"/>
+			<AniFrame value="0" time="700"/>
+			<AniFrame value="192" time="3900"/>
+		</VariableAnimation>
+	</Var>
+	<Var name="timeAni">
+		<VariableAnimation loop="false" initPause="true">
+			<AniFrame value="0" time="0"/>
+			<AniFrame value="0" time="3000" easeType="CubicEaseOut"/>
+			<AniFrame value="1" time="3300"/>
+		</VariableAnimation>
+	</Var>
+	<Var name="endAni">
+		<VariableAnimation name="endAnimation" loop="false" initPause="true">
+			<AniFrame value="0" time="0" />
+			<AniFrame value="1" time="3900"/>
+			<Triggers>
+				<Trigger action="end" condition="#endAnimation.current_frame==-1">
+					<!-- 动画结束之后记得给系统发个命令 -->
+					<ExternCommand command="animationState" strPara="'finish'" />
+				</Trigger>
+			</Triggers>
+		</VariableAnimation>
+	</Var>
+
+	<!-- <Rectangle w="1080" h="1080" fillColor="#19ffffff"/> -->
+	<Image x="#screen_width/2-120" y="#screen_width/2" align="center" alignV="center" src="cqbw/wm.png" scale="2" srcid="int(#imgAni)" />
+
+	<Time x="#screen_width/2-160" y="#screen_width/5" align="center" alignV="center" src="time/num.png" alpha="#timeAni*255" scale="2"/>
+
+	<Var name="batteryStrokeColor" expression="'#ffbf0000'" type="string" const="true"/>
+	<Var name="batteryLevelColor" expression="ifelse(#battery_state==1||#battery_state==3,'#ffbf0000',@batteryStrokeColor)" type="string" />
+	<Group x="540-#batteryLevel.text_width/2-10" y="#screen_width/5+250" w="77" h="34" align="center" alignV="center" layered="true" clip="true" alpha="#timeAni*255" visibility="#battery_enable">
+		<Rectangle w="70" h="34" strokeColor="@batteryStrokeColor" weight="4" strokeAlign="inner" cornerRadius="10"/>
+		<Rectangle x="73" y="17" w="4" h="12" alignV="center" fillColor="@batteryStrokeColor" cornerRadius="2"/>
+		<Group x="8" y="8" w="0.54*#battery_level" h="18" clip="true">
+			<Rectangle w="54" h="18" fillColor="@batteryLevelColor" cornerRadius="3"/>
+		</Group>
+		<Image x="35" y="17" align="center" alignV="center" src="chargeMask.png" xfermodeNum="8" visibility="int(#battery_state==1||#battery_state==3)"/>
+		<Group x="35" y="17" w="20" h="34" align="center" alignV="center" layered="true" clip="true" visibility="int(#battery_state==1||#battery_state==3)">
+			<Image x="10" y="17" align="center" alignV="center" src="chargeIcon.png" />
+			<Rectangle w="20" h="34" fillColor="@batteryStrokeColor" xfermodeNum="5"/>
+		</Group>
+	</Group>
+	<Text name="batteryLevel" x="600-#batteryLevel.text_width/2-10" y="#screen_width/5+250" alignV="center" color="@batteryStrokeColor" size="36" textExp="#battery_level+'%'" alpha="#timeAni*255" visibility="#battery_enable"/>
+
+	<!-- 通知图标之间的间隙 -->
+	<Var name="noticeSpace" type="number" const="true" expression="60" />
+	<Group y="#screen_width/5+300-!#battery_enable*60" alpha="#timeAni*255" >
+		<!-- 预览模式通知 -->
+		<Group visibility="#notification_enable ** #preview_mode">
+			<Image x="540-#noticeSpace*3" w="72" h="72" align="center" srcType="ApplicationIcon" srcExp="'com.android.contacts,com.android.contacts.activities.TwelveKeyDialer'"/>
+			<Image x="540-#noticeSpace*1" w="72" h="72" align="center" srcType="ApplicationIcon" srcExp="'com.android.mms,com.android.mms.ui.MmsTabActivity'"/>
+			<Image x="540+#noticeSpace*1" w="72" h="72" align="center" srcType="ApplicationIcon" srcExp="'com.android.email,com.android.email.activity.Welcome'"/>
+			<Image x="540+#noticeSpace*3" w="72" h="72" align="center" srcType="ApplicationIcon" srcExp="'com.android.thememanager,com.android.thememanager.ThemeResourceTabActivity'"/>
+		</Group>
+		<!-- 息屏真实通知 -->
+		<Group x="-min(#hasnotifications-1,3)*#noticeSpace" visibility="#notification_enable ** !#preview_mode">
+			<Image name="notice_icon0" x="540+#noticeSpace*0" w="72" h="72" align="center" visibility="#hasnotifications}=1"/>
+			<Image name="notice_icon1" x="540+#noticeSpace*2" w="72" h="72" align="center" visibility="#hasnotifications}=2"/>
+			<Image name="notice_icon2" x="540+#noticeSpace*4" w="72" h="72" align="center" visibility="#hasnotifications}=3"/>
+			<Image name="notice_icon3" x="540+#noticeSpace*6" w="72" h="72" align="center" visibility="#hasnotifications}=4"/>
+		</Group>
+	</Group>
+</Aod>
